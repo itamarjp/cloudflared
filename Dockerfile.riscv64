@@ -1,21 +1,29 @@
-# Build cloudflared for Linux RISC-V 64-bit.
+# use a builder image for building cloudflare
 FROM golang:1.27.2 AS builder
-ARG GOPROXY=https://proxy.golang.org|direct
-ENV CGO_ENABLED=0 GOPROXY=${GOPROXY} CONTAINER_BUILD=1
+ARG GOPROXY=https://athens.cfdata.org|https://proxy.golang.org|direct
+ENV GO111MODULE=on \
+  CGO_ENABLED=0 \
+  GOPROXY=${GOPROXY} \
+  CONTAINER_BUILD=1
+
 WORKDIR /go/src/github.com/cloudflare/cloudflared/
+
 COPY go.mod go.sum ./
 RUN go mod download
+
 COPY . .
+
+# compile cloudflared
 RUN GOOS=linux GOARCH=riscv64 go build -o cloudflared ./cmd/cloudflared
 
-# The binary is statically linked; copy CA roots for TLS trust.
-FROM alpine:edge AS certs
-RUN apk add --no-cache ca-certificates
+# use a distroless base image with glibc
+FROM gcr.io/distroless/base-debian13:nonroot-riscv64
 
-FROM scratch
-LABEL org.opencontainers.image.source="https://github.com/itamarjp/cloudflared"
-COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /go/src/github.com/cloudflare/cloudflared/cloudflared /usr/local/bin/cloudflared
+LABEL org.opencontainers.image.source="https://github.com/cloudflare/cloudflared"
+
+COPY --from=builder --chown=nonroot /go/src/github.com/cloudflare/cloudflared/cloudflared /usr/local/bin/
+
 USER 65532:65532
-ENTRYPOINT ["/usr/local/bin/cloudflared", "--no-autoupdate"]
+
+ENTRYPOINT ["cloudflared", "--no-autoupdate"]
 CMD ["version"]
