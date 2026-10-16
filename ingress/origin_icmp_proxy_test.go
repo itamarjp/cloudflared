@@ -3,11 +3,13 @@ package ingress
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/netip"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -51,6 +53,9 @@ func testICMPRouterEcho(t *testing.T, sendIPv4 bool) {
 	)
 
 	router, err := NewICMPRouter(localhostIP, localhostIPv6, &noopLogger, testFunnelIdleTimeout)
+	if err != nil && (errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.EACCES) || strings.Contains(err.Error(), "is not between ping group")) {
+		t.Skipf("ICMP sockets unavailable on this runner: %v", err)
+	}
 	require.NoError(t, err)
 
 	proxyDone := make(chan struct{})
@@ -113,6 +118,9 @@ func TestTraceICMPRouterEcho(t *testing.T) {
 	tracingCtx := "ec31ad8a01fde11fdcabe2efdce36873:52726f6cabc144f5:0:1"
 
 	router, err := NewICMPRouter(localhostIP, localhostIPv6, &noopLogger, testFunnelIdleTimeout)
+	if err != nil && (errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.EACCES) || strings.Contains(err.Error(), "is not between ping group")) {
+		t.Skipf("ICMP sockets unavailable on this runner: %v", err)
+	}
 	require.NoError(t, err)
 
 	proxyDone := make(chan struct{})
@@ -215,6 +223,9 @@ func TestConcurrentRequestsToSameDst(t *testing.T) {
 	)
 
 	router, err := NewICMPRouter(localhostIP, localhostIPv6, &noopLogger, testFunnelIdleTimeout)
+	if err != nil && (errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.EACCES) || strings.Contains(err.Error(), "is not between ping group")) {
+		t.Skipf("ICMP sockets unavailable on this runner: %v", err)
+	}
 	require.NoError(t, err)
 
 	proxyDone := make(chan struct{})
@@ -348,6 +359,9 @@ func TestICMPRouterRejectNotEcho(t *testing.T) {
 
 func testICMPRouterRejectNotEcho(t *testing.T, srcDstIP netip.Addr, msgs []icmp.Message) {
 	router, err := NewICMPRouter(localhostIP, localhostIPv6, &noopLogger, testFunnelIdleTimeout)
+	if err != nil && (errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.EACCES) || strings.Contains(err.Error(), "is not between ping group")) {
+		t.Skipf("ICMP sockets unavailable on this runner: %v", err)
+	}
 	require.NoError(t, err)
 
 	muxer := newMockMuxer(1)
