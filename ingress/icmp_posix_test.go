@@ -4,7 +4,10 @@ package ingress
 
 import (
 	"context"
+	"errors"
 	"os"
+	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -28,6 +31,9 @@ func TestFunnelIdleTimeout(t *testing.T) {
 	)
 	logger := zerolog.New(os.Stderr)
 	proxy, err := newICMPProxy(localhostIP, &logger, idleTimeout)
+	if err != nil && (errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.EACCES) || strings.Contains(err.Error(), "is not between ping group")) {
+		t.Skipf("ICMP sockets unavailable on this runner: %v", err)
+	}
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -86,6 +92,9 @@ func TestReuseFunnel(t *testing.T) {
 	)
 	logger := zerolog.New(os.Stderr)
 	proxy, err := newICMPProxy(localhostIP, &logger, idleTimeout)
+	if err != nil && (errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.EACCES) || strings.Contains(err.Error(), "is not between ping group")) {
+		t.Skipf("ICMP sockets unavailable on this runner: %v", err)
+	}
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
