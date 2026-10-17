@@ -130,7 +130,7 @@ endif
 #for FIPS compliance, FPM defaults to MD5.
 RPM_DIGEST := --rpm-digest sha256
 
-GO_TEST_LOG_OUTPUT = /tmp/gotest.log
+GO_TEST_LOG_OUTPUT = gotest.log
 
 .PHONY: all
 all: cloudflared test
