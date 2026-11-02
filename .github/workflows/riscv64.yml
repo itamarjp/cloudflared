@@ -30,9 +30,9 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: true
@@ -49,7 +49,7 @@ jobs:
           go build -mod=readonly -o cloudflared-linux-riscv64 ./cmd/cloudflared
           ./cloudflared-linux-riscv64 --version
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: cloudflared-linux-riscv64
           path: cloudflared-linux-riscv64
@@ -62,7 +62,7 @@ jobs:
 
       - name: Log in to GHCR
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
